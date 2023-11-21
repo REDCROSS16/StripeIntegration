@@ -12,12 +12,15 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Traits\DateManagementTrait;
+
 /**
  * Class Payment
  * @package App\Entity
  */
 class Payment
 {
+    use DateManagementTrait;
 
     private ?int $id = null;
 

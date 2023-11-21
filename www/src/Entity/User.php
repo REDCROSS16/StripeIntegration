@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Entity\ENUM\Roles;
+use App\Entity\Traits\DateManagementTrait;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -261,6 +262,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
             $this->cards->add($invoice);
             $invoice->setUser($this);
         }
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function eraseCredentials(): self
+    {
+        $this->password = null;
 
         return $this;
     }

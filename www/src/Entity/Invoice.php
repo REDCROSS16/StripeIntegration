@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Traits\DateManagementTrait;
+
 /**
  * Class Invoice
  * @package App\Entity

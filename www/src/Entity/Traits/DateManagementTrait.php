@@ -1,18 +1,10 @@
 <?php
 
-/**
- * Created by PhpStorm.
- * User: zhuralex172
- * Date: 26.09.22
- * Time: 17:30
- * Project: ledums
- */
-
 declare(strict_types=1);
 
-namespace App\Entity;
+namespace App\Entity\Traits;
 
-use App\Service\DateTime\DateTimeWrapper;
+//use App\Service\DateTime\DateTimeWrapper;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -37,8 +29,8 @@ trait DateManagementTrait
     #[ORM\PrePersist]
     public function prePersist(): void
     {
-        $this->createdAt = DateTimeWrapper::getCurrentMoment();
-        $this->updatedAt = DateTimeWrapper::getCurrentMoment(); //todo:
+//        $this->createdAt = DateTimeWrapper::getCurrentMoment();
+//        $this->updatedAt = DateTimeWrapper::getCurrentMoment(); //todo:
     }
 
     /**
@@ -48,7 +40,7 @@ trait DateManagementTrait
     #[ORM\PreUpdate]
     public function preUpdate(): void
     {
-        $this->updatedAt = DateTimeWrapper::getCurrentMoment(); // todo:
+//        $this->updatedAt = DateTimeWrapper::getCurrentMoment(); // todo:
     }
 
     /**

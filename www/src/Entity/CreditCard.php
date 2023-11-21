@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Entity\ENUM\CardStatus;
+use App\Traits\Entity\DateManagementTrait;
 use Doctrine\DBAL\Types\Types;
 
 /**
