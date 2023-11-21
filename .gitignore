@@ -1,7 +1,7 @@
-.config
+config
 logs
 mysql
-.mysql_conf
-.nginx_conf
-.php_conf
+mysql_conf
+nginx_conf
+php_conf
 .idea
