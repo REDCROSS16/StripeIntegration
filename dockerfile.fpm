@@ -1,2 +1,12 @@
 FROM php:8.1.7-fpm-alpine3.16
 ENV COMPOSER_ALLOW_SUPERUSER 1
+
+RUN apk add --no-cache screen bzip2-dev icu-dev autoconf alpine-sdk zlib-dev libzip-dev libmemcached-dev curl linux-headers php81-xdebug libpng-dev libintl gettext-dev libxml2-dev libxslt-dev mysql-client libwebp-dev libjpeg-turbo-dev libxpm-dev freetype-dev python3 graphviz cyrus-sasl-dev imagemagick imagemagick-libs imagemagick-dev php81-openssl
+
+RUN docker-php-ext-install pdo
+RUN docker-php-ext-install pdo_mysql
+RUN docker-php-ext-enable xdebug
+
+RUN pecl install xdebug
+
+

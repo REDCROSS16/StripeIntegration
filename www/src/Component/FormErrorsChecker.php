@@ -12,8 +12,7 @@ class FormErrorsChecker
 {
     public function __construct(
         readonly private ValidatorInterface $validator
-    )
-    {
+    ) {
     }
 
     public function check(User $user, FormInterface $form): string

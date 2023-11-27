@@ -4,7 +4,6 @@ namespace App\Form;
 
 use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\DataTransformer\ArrayToPartsTransformer;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -15,11 +14,17 @@ use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
 
+/**
+ * Class CreditCardForm
+ * @package App\Form
+ */
 class UserFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            ->setMethod('POST')
+            ->setAction('/register')
             ->add('firstName', TextType::class, [
                 'constraints' => [
                     new Length([
@@ -42,8 +47,10 @@ class UserFormType extends AbstractType
                     ])
                 ]
             ])
-            ->add('email', EmailType::class,
-            [
+            ->add(
+                'email',
+                EmailType::class,
+                [
                 'constraints' =>[
                     new Email([
                         'message'=>'This is not the corect email format'
@@ -54,18 +61,22 @@ class UserFormType extends AbstractType
                 ],
             ]
             )
-            ->add('phoneNumber', null,
+            ->add(
+                'phone',
+                null,
                 [
                     'constraints' => [
                     new NotBlank([
                         'message' => 'This field can not be blank'
                     ]),
-                        new Regex('/(\+)[0-9]{7,}$/','Enter a phone like +ххххххх')
+                        new Regex('/(\+)[0-9]{7,}$/', 'Enter a phone like +ххххххх')
                     ]
                 ]
             )
-            ->add('password', PasswordType::class,
-            [
+            ->add(
+                'password',
+                PasswordType::class,
+                [
                 'constraints' => [
                     new NotBlank([
                         'message' => "Enter password"
@@ -73,10 +84,6 @@ class UserFormType extends AbstractType
                 ]
             ]
             )
-            ->add('roles', null,
-            [
-                'mapped' => false
-            ])
         ;
     }
 

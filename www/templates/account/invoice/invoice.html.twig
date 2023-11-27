@@ -1,0 +1,14 @@
+{% set title = 'List of Invoices' %}
+{% extends 'account/account.html.twig' %}
+
+{% block title %}
+    {{ title }}
+{% endblock %}
+
+{% block content %}
+    {{ parent() }}
+
+    <h3>{{ title }}</h3>
+
+    {% include 'account/invoice/invoice-table.html.twig'%}
+{% endblock %}

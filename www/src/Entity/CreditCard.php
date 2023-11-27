@@ -12,17 +12,28 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Entity\ENUM\CardStatus;
-use App\Traits\Entity\DateManagementTrait;
+use App\Entity\Traits\DateManagementTrait;
+use App\Entity\Traits\SoftDeletableInterface;
+use App\Entity\Traits\SoftDeletableTrait;
+use App\Repository\CreditCardRepository;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Class CreditCard
  * @package App\Entity
  */
-class CreditCard implements EntityInterface
+#[ORM\Entity(repositoryClass: CreditCardRepository::class)]
+#[ORM\HasLifecycleCallbacks()]
+#[ORM\UniqueConstraint(name: 'token', columns: ['token'])]
+#[UniqueEntity(fields: ['token'], message: 'error.validation.phone.already_exists')]
+#[ORM\Table('`card`')]
+class CreditCard implements EntityInterface, SoftDeletableInterface
 {
     use DateManagementTrait;
+    use SoftDeletableTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
@@ -31,26 +42,23 @@ class CreditCard implements EntityInterface
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'cards')]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'user_id', nullable: false)]
-    #[Assert\NotNull(message: 'error.validation.field.required')]
     private ?User $user = null;
 
     #[ORM\Column(name: 'name', type: Types::STRING, length: 180, nullable: false)]
-    protected ?string $name = null;
+    private ?string $name = null;
 
-    #[ORM\Column(name: 'pan', type: Types::INTEGER, length: 16, unique: true, nullable: false)]
-    protected ?int $pan = null;  //todo:create PAN
+    #[ORM\Column(name: 'pan', type: Types::STRING, length: 16, unique: true, nullable: false)]
+    #[Assert\Length(min: 16, max: 16)]
+    private ?string $pan = null;
 
     #[ORM\Column(name: 'expiration', type: Types::STRING, length: 4, nullable: false)]
-    protected ?string $expiration = null; // Срок действия карты format: yymm
+    private ?string $expiration = null;
 
     #[ORM\Column(name: 'cvv', type: Types::STRING, length: 4, nullable: false)]
-    protected ?string $cvv = null;
-
-    #[ORM\Column(name: 'status', type: Types::STRING, length: 255, nullable: false)]
-    protected string $status;
+    private ?string $cvv = null;
 
     #[ORM\Column(name: 'token', type: Types::STRING, length: 255, unique: true, nullable: false)]
-    protected string $token;
+    private ?string $token = null;
 
     public function getId(): int
     {
@@ -94,22 +102,19 @@ class CreditCard implements EntityInterface
         return $this;
     }
 
-
+    /**
+     * @return string|null
+     */
     public function getPAN(): ?string
     {
         return $this->pan;
     }
 
-//    public function getPANNumber(): string
-//    {
-//        if (!isset($this->pan)) {
-//            return '';
-//        }
-//
-//        return $this->getPAN()->getNumber();
-//    }
-
-    public function setPan(int $pan): self
+    /**
+     * @param string $pan
+     * @return $this
+     */
+    public function setPan(string $pan): self
     {
         $this->pan = $pan;
 
@@ -150,5 +155,22 @@ class CreditCard implements EntityInterface
         $this->cvv = $cvv;
     }
 
+    /**
+     * @return string|null
+     */
+    public function getToken(): ?string
+    {
+        return $this->token;
+    }
 
+    /**
+     * @param string|null $token
+     * @return self
+     */
+    public function setToken(?string $token): self
+    {
+        $this->token = $token;
+
+        return $this;
+    }
 }

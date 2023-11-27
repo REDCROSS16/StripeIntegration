@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\EntityInterface;
-use App\Entity\SoftDeletableInterface;
+use App\Entity\Traits\SoftDeletableInterface;
 use App\Repository\Exception\CannotBuildRepositoryException;
 use App\Repository\Exception\FlushChangesException;
-use App\Service\AuthManager;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Class AbstractRepository
@@ -23,26 +25,22 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 abstract class AbstractRepository extends ServiceEntityRepository
 {
     protected readonly LoggerInterface $logger;
-    protected readonly TranslatorInterface $translator;
-    protected readonly SecurityInterface $security;
+    protected readonly Security $security;
     protected readonly EventDispatcherInterface $eventDispatcher;
 
     /**
      * @param ManagerRegistry $registry
      * @param LoggerInterface $logger
-     * @param TranslatorInterface $translator
-     * @param SecurityInterface $security
+     * @param Security $security
      * @param EventDispatcherInterface $eventDispatcher
      * @throws CannotBuildRepositoryException
      */
     public function __construct(
         ManagerRegistry $registry,
         LoggerInterface $logger,
-        TranslatorInterface $translator,
-        SecurityInterface $security,
+        Security $security,
         EventDispatcherInterface $eventDispatcher,
     ) {
-        $this->translator = $translator;
         $this->logger = $logger;
         $this->security = $security;
         $this->eventDispatcher = $eventDispatcher;
@@ -63,7 +61,7 @@ abstract class AbstractRepository extends ServiceEntityRepository
     public function delete(EntityInterface $entity, bool $soft = true): void
     {
         try {
-            if ($soft === true && $entity instanceof SoftDeletableInterface) { //todo:
+            if ($soft === true && $entity instanceof SoftDeletableInterface) {
                 $entity->setIsDeleted(true);
                 $entity->setIsActive(false);
                 $this->_em->persist($entity);
@@ -85,14 +83,6 @@ abstract class AbstractRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return EntityManagerInterface
-     */
-    public function getEntityManager(): EntityManagerInterface
-    {
-        return parent::getEntityManager();
-    }
-
-    /**
      * @param SoftDeletableInterface $entity
      * @return void
      * @throws FlushChangesException
@@ -104,7 +94,7 @@ abstract class AbstractRepository extends ServiceEntityRepository
         try {
             $this->_em->persist($entity);
             $this->_em->flush();
-        } catch (Exception) {
+        } catch (\Exception) {
             throw new FlushChangesException($this->translator->trans('error.entity.recover'));
         }
     }
@@ -119,21 +109,53 @@ abstract class AbstractRepository extends ServiceEntityRepository
         try {
             $this->_em->persist($entity);
             $this->_em->flush();
-        } catch (UniqueConstraintViolationException $ex) {
-            preg_match_all('~duplicate entry ["\'](?P<value>.+)["\'].*for key ["\'](?P<key>.+)["\']~i', $ex->getMessage(), $matches);
-
-            if (\count($matches['value'])) {
-                throw new FlushChangesException($this->translator->trans('error.entity.non_unique_data', [
-                    '{{ value }}' => $matches['value'][0],
-                    '{{ field }}' => $matches['key'][0],
-                ]));
-            }
-
-            throw new FlushChangesException($this->translator->trans('error.entity.non_unique_data_common'));
-        } catch (\Exception) {
-            throw new FlushChangesException($this->translator->trans('error.entity.save'));
+        } catch (\Exception $e) {
+            throw new FlushChangesException($e->getMessage());
         }
     }
 
+    /**
+     * @param QueryBuilder $qb
+     * @param bool $useCache
+     * @return Query
+     */
+    protected function getQuery(QueryBuilder $qb, bool $useCache = false): Query
+    {
+        $query = $qb->getQuery();
 
+        return $useCache ? $query->enableResultCache() : $query->disableResultCache();
+    }
+
+    /**
+     * @return string
+     * @throws CannotBuildRepositoryException
+     */
+    protected function getEntityClassName(): string
+    {
+        $repositoryNameParts = explode('\\', \get_class($this));
+        $repositoryName = end($repositoryNameParts);
+
+        if (!str_contains($repositoryName, 'Repository')) {
+            throw new CannotBuildRepositoryException(' Non-standard repository name given. Repository must be named like "EntityNameRepository"');
+        }
+
+        return 'App\Entity\\' . str_replace('Repository', '', $repositoryName);
+    }
+
+    /**
+     * @param QueryBuilder $qb
+     * @param bool $useCache
+     * @return array
+     */
+    protected function getResult(QueryBuilder $qb, bool $useCache = false): array
+    {
+        try {
+            $result = $this->getQuery($qb, $useCache)->getResult();
+        } catch (\Exception $ex) {
+            $this->logger->error($ex->getFile() . "({$ex->getLine()}): {$ex->getMessage()}");
+            $result = [];
+        }
+
+        return $result;
+    }
 }

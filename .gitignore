@@ -5,3 +5,7 @@ mysql_conf
 nginx_conf
 php_conf
 .idea
+
+/www/.env.local
+/www/.env.local.php
+/www/.env.*.local

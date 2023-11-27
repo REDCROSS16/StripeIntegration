@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity\ENUM;
+namespace App\ENUM;
 
 enum PaymentStatus: string
 {

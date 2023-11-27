@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Entity\Traits;
 
-//use App\Service\DateTime\DateTimeWrapper;
+use App\Entity\EntityInterface;
+use App\Service\Datetime\DateTimeWrapper;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Exception;
-use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @package App\Entity
@@ -29,8 +29,8 @@ trait DateManagementTrait
     #[ORM\PrePersist]
     public function prePersist(): void
     {
-//        $this->createdAt = DateTimeWrapper::getCurrentMoment();
-//        $this->updatedAt = DateTimeWrapper::getCurrentMoment(); //todo:
+        $this->createdAt = DateTimeWrapper::getCurrentMoment();
+        $this->updatedAt = DateTimeWrapper::getCurrentMoment();
     }
 
     /**
@@ -40,7 +40,7 @@ trait DateManagementTrait
     #[ORM\PreUpdate]
     public function preUpdate(): void
     {
-//        $this->updatedAt = DateTimeWrapper::getCurrentMoment(); // todo:
+        $this->updatedAt = DateTimeWrapper::getCurrentMoment();
     }
 
     /**

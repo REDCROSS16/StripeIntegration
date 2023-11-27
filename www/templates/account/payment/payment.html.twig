@@ -1,0 +1,16 @@
+{% set title = 'List of Payments' %}
+{% extends 'account/account.html.twig' %}
+
+{% block title %}
+    {{ title }}
+{% endblock %}
+
+{% block content %}
+    {{ parent() }}
+
+    {% include 'flash/flash.html.twig' %}
+
+    <h3>{{ title }}</h3>
+
+    {% include 'account/payment/payment-table.html.twig'%}
+{% endblock %}

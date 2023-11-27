@@ -2,8 +2,10 @@
 
 namespace App\Entity;
 
-use App\Entity\ENUM\Roles;
+use App\ENUM\Roles;
 use App\Entity\Traits\DateManagementTrait;
+use App\Entity\Traits\SoftDeletableInterface;
+use App\Entity\Traits\SoftDeletableTrait;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -14,10 +16,11 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-#[ORM\Table(name: '`user`')]
-class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityInterface
+#[ORM\HasLifecycleCallbacks()]
+class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityInterface, SoftDeletableInterface
 {
     use DateManagementTrait;
+    use SoftDeletableTrait;
 
     public function __construct()
     {
@@ -32,7 +35,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
     private ?int $id = null;
 
     #[ORM\Column(name: 'email', type: Types::STRING, length: 180, unique: true, nullable: true)]
-    #[Assert\NotNull(message: 'error.validation.field.required')] //todo:
+    #[Assert\NotNull(message: 'error.validation.field.required')]
     #[Assert\NotBlank(message: 'error.validation.field.required')]
     #[Assert\Email(message: 'error.validation.email.incorrect', mode: 'html5')]
     #[Assert\Regex(pattern: '/^.*@[a-z]{2,10}\.[a-z]{2,}$/', message: 'error.validation.email.incorrect')]
@@ -52,7 +55,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
 
     #[ORM\Column(name: 'phone', type: Types::STRING, length: 20, unique: true, nullable: true)]
     #[Assert\Regex('/(\+)[0-9]{7,}$/')]
-    private ?string $phoneNumber = null;
+    private ?string $phone = null;
 
     #[ORM\Column(name: 'roles', type: Types::JSON, nullable: false)]
     #[Assert\NotNull]
@@ -100,13 +103,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
         return $this;
     }
 
-
     /**
      * @return string
      */
     public function getUserIdentifier(): string
     {
-        return $this->email ?: $this->phoneNumber;
+        return $this->email ?: $this->phone;
     }
 
     /**
@@ -146,18 +148,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
     /**
      * @return string
      */
-    public function getPhoneNumber(): string
+    public function getPhone(): string
     {
-        return $this->phoneNumber;
+        return $this->phone;
     }
 
     /**
-     * @param string $phoneNumber
+     * @param string $phone
      * @return void
      */
-    public function setPhoneNumber(string $phoneNumber): void
+    public function setPhone(string $phone): void
     {
-        $this->phoneNumber = $phoneNumber;
+        $this->phone = $phone;
     }
 
     /**
@@ -182,9 +184,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getPassword(): string
+    public function getPassword(): ?string
     {
         return $this->password;
     }
@@ -271,8 +273,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
      */
     public function eraseCredentials(): self
     {
-        $this->password = null;
-
         return $this;
     }
 }

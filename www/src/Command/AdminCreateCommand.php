@@ -2,7 +2,7 @@
 
 namespace App\Command;
 
-use App\Entity\ENUM\Roles;
+use App\Entity\Roles;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -52,7 +52,7 @@ class AdminCreateCommand extends Command
         $user->setFirstName($firstName);
         $user->setLastName($lastName);
         $user->setEmail($email);
-        $user->setPhoneNumber($phone);
+        $user->setPhone($phone);
         $user->setPassword(
             $this->userPasswordHasher->hashPassword(
                 $user,

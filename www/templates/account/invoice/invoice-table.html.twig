@@ -1,0 +1,25 @@
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">#</th>
+        <th scope="col">Order</th>
+        <th scope="col">Amount</th>
+        <th scope="col">Status</th>
+        <th scope="col">Description</th>
+        <th scope="col">Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for invoice in invoices %}
+        <tr>
+            <th scope="row">{{ loop.index }}</th>
+            <td>{{ invoice.order }}</td>
+            <td>{{ invoice.amount }}</td>
+            <td>{{ invoice.status }}</td>
+            <td>{{ invoice.description }}</td>
+            <td><a class="btn btn-primary" aria-label="Close" href="{{ path('pay-page', { 'invoiceId': invoice.id }) }}">activate</a></td>
+        </tr>
+    {% endfor %}
+
+    </tbody>
+</table>
