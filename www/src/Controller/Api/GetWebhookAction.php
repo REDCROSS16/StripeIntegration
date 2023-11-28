@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
+use App\Service\Webhook\WebhookService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -23,9 +24,13 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/api/stripe/webhook', name: 'api-stripe-webhook', methods: ['POST'])]
 class GetWebhookAction extends AbstractController
 {
+    private WebhookService $webhookService;
+    public function __construct(WebhookService $webhookService) {
+        $this->webhookService = $webhookService;
+    }
+
     public function __invoke(Request $request)
     {
-        // TODO: обработать вебхук
-        // HandleService::handleWebhook($request);
+        $this->webhookService->handle($request);
     }
 }

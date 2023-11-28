@@ -79,44 +79,11 @@
                 <input type="hidden" id="invoiceId" name="invoiceId" value="{{ invoice.id }}" />
             {% endif %}
                 <input type="hidden" id="stripeToken" name="stripeToken"/>
-
-
-{# not mine#}
-
-{#            <div class="form-group">#}
-{#                <label>NAME</label>#}
-{#                <input type="text" name="name" id="name" class="field" placeholder="Enter name" required="" autofocus="">#}
-{#            </div>#}
-{#            <div class="form-group">#}
-{#                <label>EMAIL</label>#}
-{#                <input type="email" name="email" id="email" class="field" placeholder="Enter email" required="">#}
-{#            </div>#}
-{#            <div class="form-group">#}
-{#                <label>CARD NUMBER</label>#}
-{#                <div id="card_number" class="field"></div>#}
-{#            </div>#}
-
-{#            <div class="row">#}
-{#                <div class="left">#}
-{#                    <div class="form-group">#}
-{#                        <label>EXPIRY DATE</label>#}
-{#                        <div id="card_expiry" class="field"></div>#}
-{#                    </div>#}
-{#                </div>#}
-{#                <div class="right">#}
-{#                    <div class="form-group">#}
-{#                        <label>CVC CODE</label>#}
-{#                        <div id="card_cvc" class="field"></div>#}
-{#                    </div>#}
-{#                </div>#}
-{#            </div>#}
-
-
-{#            <button type="submit" class="btn btn-success" id="payBtn">Submit Payment</button>#}
         </form>
     </div>
 </div>
 </body>
+
 <script>
     let stripe = Stripe("{{  stripe_key }}");
     let elements = stripe.elements();
@@ -135,19 +102,15 @@
     });
 
     let form = document.getElementById('paymentForm');
-    // Create a token when the form is submitted.
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         createToken();
     });
-    // Create single-use token to charge the user
+
     function createToken() {
         stripe.createToken(cardElement).then(function(result) {
-            if (result.error) {
-                resultContainer.innerHTML = '<p>' + result.error.message + '</p>';
-            } else {
-                stripeTokenHandler(result.token);
-            }
+            (result.error) ? resultContainer.innerHTML = '<p>' + result.error.message + '</p>' : stripeTokenHandler(result.token);
         });
     }
 
@@ -159,7 +122,8 @@
         form.submit();
     }
 
-    function completeFieldsBeforeSubmit(fieldName){
+    function completeFieldsBeforeSubmit(){
+        // TODO: придумать как вытащить данные из iframe security
         // let iframe = document.querySelector('iframe');
         // let innerDoc = iframe.contentDocument || iframe.contentWindow.document;
         // let stripePan = innerDoc.querySelector('input[name=cardnumber]');
@@ -173,6 +137,5 @@
         let cvv = document.querySelector('input[name=cvv]');
         cvv.setAttribute('value', '424');
     }
-
 </script>
 </html>

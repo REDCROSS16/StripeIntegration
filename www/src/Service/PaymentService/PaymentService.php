@@ -136,6 +136,7 @@ class PaymentService
                 $this->save($user, InvoiceStatus::COMPLETE->value, $invoice, $description);
 
             } catch (Exception $e) {
+
                 $this->save($user, InvoiceStatus::ERROR->value, $invoice, $e->getMessage());
                 throw new Exception($e->getMessage());
             }
