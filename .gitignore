@@ -9,3 +9,8 @@ php_conf
 /www/.env.local
 /www/.env.local.php
 /www/.env.*.local
+
+###> friendsofphp/php-cs-fixer ###
+/www/php-cs-fixer.php
+/www/php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###

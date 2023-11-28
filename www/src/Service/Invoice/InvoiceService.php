@@ -77,10 +77,10 @@ class InvoiceService
     }
 
     /**
-     * @param int $invoiceId
+     * @param int|null $invoiceId
      * @return Invoice|null
      */
-    public function getInvoiceById(int $invoiceId): ?Invoice
+    public function getInvoiceById(?int $invoiceId): ?Invoice
     {
         return $this->getInvoiceRepo()->findOneBy(['id'=>$invoiceId]);
     }

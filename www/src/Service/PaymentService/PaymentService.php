@@ -94,24 +94,53 @@ class PaymentService
     public function pay(Request $request, UserInterface $user): void
     {
         $amount = round($request->request->get('amount') * 100);
-        $currency = Currency::tryFrom($request->request->get('currency'));
+        $email = $request->request->get('email');
+//        $currency = Currency::tryFrom($request->request->get('currency')) ?? Currency::USD->value;
+        $currency = 'usd';
         $source = $request->request->get('stripeToken');
         $description = $request->request->get('description');
-        $invoice = $this->invoiceService->getInvoiceById($request->request->get('invoice'));
+
+        $invoice = null;
+
+        // todo: create empty invoices
+        // todo: webhook
+        // todo: save credit card information for subscribing
+//        $invoice = $this->invoiceService->getInvoiceById($request->request->get('invoice'));
+        Stripe::setApiKey($_ENV["STRIPE_SECRET"]);
+
+
+
+        $errors = [];
 
         try {
-            Stripe::setApiKey($_ENV["STRIPE_SECRET"]);
-            Charge::create([
-                "amount" => $amount,
-                "currency" => $currency,
-                "source" => $source,
-                "description" => $description
-            ]);
+            $customer = Customer::create(array(
+                'email' => $email,
+                'source'  => $source
+            ));
 
-            $this->save($user, InvoiceStatus::COMPLETE->value, $invoice, $description);
-        } catch (\Throwable $e) {
-            $this->save($user, InvoiceStatus::ERROR->value, $invoice, $e->getMessage());
-            throw new Exception($e->getMessage());
+        } catch (Exception $e) {
+            $errors[] = $e->getMessage();
+        }
+
+        if (empty($errors) && isset($customer)) {
+            try {
+                $charge = Charge::create(array(
+                    'customer' => $customer->id,
+                    'amount'   => $amount,
+                    'currency' => $currency,
+                    'description' => $description
+                ));
+
+                $chargeJson = $charge->jsonSerialize();
+
+                $this->save($user, InvoiceStatus::COMPLETE->value, $invoice, $description);
+
+            } catch (Exception $e) {
+                $this->save($user, InvoiceStatus::ERROR->value, $invoice, $e->getMessage());
+                throw new Exception($e->getMessage());
+            }
+
+
         }
     }
 
@@ -129,7 +158,7 @@ class PaymentService
         $currency = Currency::tryFrom($request->request->get('currency'));
         $email = $user->getUserIdentifier();
         $amount = round($request->request->get('amount') * 100);
-        $plan = SubscriptionPlan::tryFrom($request->request->get('plan'));
+        $plan = SubscriptionPlan::tryFrom($request->request->get('plan')) ?? SubscriptionPlan::PLAN_WEEK->value;
         $errors = [];
 
         Stripe::setApiKey($_ENV["STRIPE_KEY"]);
@@ -167,6 +196,10 @@ class PaymentService
 
         if (empty($errors) && isset($subscription)) {
             $data = $subscription->jsonSerialize();
+
+            if ($invoice === null) {
+                return;
+            }
 
             if ($data['status'] === 'active') {
                 $invoice->setIsBind(true);
