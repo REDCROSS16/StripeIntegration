@@ -3,14 +3,14 @@
 /**
  * Created by PhpStorm
  * User: red
- * Date: 27.11.2023
- * Time: 13:56
+ * Date: 28.11.2023
+ * Time: 18:43
  * Project: StripeIntegration
  */
 
 declare(strict_types=1);
 
-namespace App\Controller\Api;
+namespace App\Controller\StripePay;
 
 use App\Service\PaymentService\PaymentService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,11 +19,11 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * Class CheckStatusOfPayment
- * @package App\Controller\Api\Invoice
+ * Class CompletePayTestAction
+ * @package App\Controller\StripePay
  */
-#[Route(path: '/api/check-payment', name: 'api-check-payment', methods: ['POST'])]
-class CheckPaymentStatusAction extends AbstractController
+#[Route('/stripe/pay', name: 'stripe-pay', methods: ['POST'])]
+class CompleteStripePayAction extends AbstractController
 {
     private PaymentService $paymentService;
 
@@ -35,11 +35,11 @@ class CheckPaymentStatusAction extends AbstractController
     public function __invoke(Request $request): Response
     {
         try {
-            $payment = $this->paymentService->getPaymentById($request->request->get('paymentId'));
-        } catch (\Throwable $e) {
-            return $this->json(['status' => $e->getMessage(), Response::HTTP_BAD_REQUEST]);
+            $this->paymentService->simplePay($request, $this->getUser());
+        } catch (\Exception $e) {
+            return $this->redirectToRoute('account');
         }
 
-        return $this->json(['status' => $payment->getStatus()]);
+        return $this->redirectToRoute('account');
     }
 }

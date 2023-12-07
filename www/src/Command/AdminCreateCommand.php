@@ -2,8 +2,8 @@
 
 namespace App\Command;
 
-use App\Entity\Roles;
 use App\Entity\User;
+use App\ENUM\Roles;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;

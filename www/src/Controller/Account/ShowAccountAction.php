@@ -10,10 +10,9 @@
 
 declare(strict_types=1);
 
-namespace App\Controller\User;
+namespace App\Controller\Account;
 
-use App\Service\Card\CardService;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\PaymentService\PaymentService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,17 +25,20 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/account', name: 'account', methods: ['GET', 'POST'])]
 class ShowAccountAction extends AbstractController
 {
-    public function __invoke(Request $request, EntityManagerInterface $entityManager, CardService $cardService): Response
+    private PaymentService $paymentService;
+
+    public function __construct(PaymentService $paymentService)
     {
+        $this->paymentService = $paymentService;
+    }
 
-//        dd($cardService->getCreditCardByToken('1701025197'));
-
-        // TODO: отображение следующего списания
-
+    public function __invoke(Request $request): Response
+    {
         return $this->render(
-            'account/cards.html.twig',
+            'account/payment/payment.html.twig',
             [
-                'cards' => $cardService->getAvailableCards($this->getUser())
+                'payments'  => $this->paymentService->getPaymentsList($this->getUser()),
+                'user' => $this->getUser()
             ]
         );
     }

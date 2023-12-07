@@ -1,0 +1,122 @@
+{% extends 'base.html.twig' %}
+{% set title = 'Stripe pay' %}
+{% block title %} {{ title }} {% endblock %}
+
+{% block content %}
+    {% include 'nav.html.twig' %}
+
+    <div class="panel" xmlns="http://www.w3.org/1999/html">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{ title }}</h3>
+        </div>
+        <div class="panel-body">
+            <div id="paymentResponse"></div>
+
+            <form method="POST" id="paymentForm" action="{{ path('stripe-pay') }}">
+                <div class="row">
+                    <h5>User information</h5>
+                    <div class="col-4">
+                        <input id="name" type="text" class="form-control" placeholder="Name" name="name" value="{{  invoice.user.firstName }}">
+                    </div>
+                    <div class="col-4">
+                        <input id="email" type="text" class="form-control" placeholder="Email" name="email" value="{{  invoice.user.email }}">
+                    </div>
+                </div>
+
+                <div class="row mt-2">
+                    <h5>Order information</h5>
+                    <div class="col-4">
+                        <input id="order" type="text" class="form-control" placeholder="Order" name="order" value="{{ invoice.order }}">
+                    </div>
+                    <div class="col-2">
+                        <input id="date" type="date" class="form-control" name="date" value="{{ invoice.createdAt|date("Y-m-d") }}">
+                    </div>
+                    <div class="col-1">
+                        <input id="amount" step="0.01" type="number" class="form-control" name="amount" placeholder="amount" value="{{ invoice.amount }}">
+                    </div>
+                    <div class="col-1">
+                        <select id="amount" step="0.01" type="select" class="form-control" name="currency" >
+                            <option value="usd">usd</option>
+                            <option value="byn">byn</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mt-2">
+                    <h5>Card form</h5>
+                    <div class="col-3">
+                        <input id="cardName" type="text" class="form-control" placeholder="Card name" name="cardName">
+                    </div>
+                    <div class="col-2">
+                        <div class="form-control" id="pan"></div>
+                        <input type="hidden" name="pan">
+                    </div>
+                    <div class="col-2">
+                        <div class="form-control field" id="card_expiry"></div>
+                        <input type="hidden" name="expiration">
+                    </div>
+                    <div class="col-1">
+                        <div class="form-control field" id="card_cvc"></div>
+                        <input type="hidden" name="cvv">
+                    </div>
+                </div>
+
+                <div class="row mt-2">
+                    <div class="col-7">
+                        <textarea class="form-control" placeholder="description" name="description"></textarea>
+                    </div>
+                </div>
+
+                <div class="row mt-2">
+                    <div class="col-3">
+                        <input id='pay' class="btn btn-secondary btn-sm col-3" type="submit" name="pay" value="Pay">
+                    </div>
+                </div>
+                {% if invoice is defined %}
+                    <input type="hidden" id="invoiceId" name="invoiceId" value="{{ invoice.id }}" />
+                {% endif %}
+                <input type="hidden" id="stripeToken" name="stripeToken"/>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        let stripe = Stripe("{{  stripe_key }}");
+        let elements = stripe.elements();
+        let cardElement = elements.create('cardNumber');
+        cardElement.mount('#pan');
+
+        let exp = elements.create('cardExpiry');
+        exp.mount('#card_expiry');
+
+        let cvc = elements.create('cardCvc');
+        cvc.mount('#card_cvc');
+
+        let resultContainer = document.getElementById('paymentResponse');
+        cardElement.addEventListener('change', function(event) {
+            resultContainer.innerHTML = (event.error) ? '<p>' + event.error.message + '</p>' : '';
+        });
+
+        let form = document.getElementById('paymentForm');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            createToken();
+        });
+
+        function createToken() {
+            stripe.createToken(cardElement).then(function(result) {
+                (result.error) ? resultContainer.innerHTML = '<p>' + result.error.message + '</p>' : stripeTokenHandler(result.token);
+            });
+        }
+
+        function stripeTokenHandler(token) {
+            let hiddenInput = document.querySelector('#stripeToken');
+            hiddenInput.setAttribute('value', token.id);
+
+            form.submit();
+        }
+    </script>
+
+{% endblock %}

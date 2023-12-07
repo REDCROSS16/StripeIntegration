@@ -11,6 +11,7 @@ use App\ENUM\InvoiceStatus;
 use App\ENUM\SubscriptionPlan;
 use App\Service\Card\CardService;
 use App\Service\Invoice\InvoiceService;
+use App\Utils\Converter\DataConverter;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Exception;
@@ -35,16 +36,18 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class PaymentService
 {
+    private const PAY_SIMPLE = 'pay_simple';
+    private const PAY_SUBSCRIPTION = 'pay_subscription';
+
+
     private EntityManagerInterface $entityManager;
     private InvoiceService $invoiceService;
-    private CardService $cardService;
     private HttpClientInterface $client;
 
-    public function __construct(EntityManagerInterface $entityManager, InvoiceService $invoiceService, CardService $cardService, HttpClientInterface $client)
+    public function __construct(EntityManagerInterface $entityManager, InvoiceService $invoiceService, HttpClientInterface $client)
     {
         $this->entityManager = $entityManager;
         $this->invoiceService = $invoiceService;
-        $this->cardService = $cardService;
         $this->client = $client;
     }
 
@@ -91,24 +94,16 @@ class PaymentService
      * @return void
      * @throws Exception
      */
-    public function pay(Request $request, UserInterface $user): void
+    public function simplePay(Request $request, UserInterface $user): void
     {
-        $amount = round($request->request->get('amount') * 100);
+        $invoice = $this->invoiceService->getInvoiceById((int) $request->request->get('invoiceId'));
+        $amount = (int) $request->request->get('amount');
         $email = $request->request->get('email');
-//        $currency = Currency::tryFrom($request->request->get('currency')) ?? Currency::USD->value;
-        $currency = 'usd';
+        $currency = Currency::tryFrom($request->request->get('currency'));
         $source = $request->request->get('stripeToken');
         $description = $request->request->get('description');
 
-        $invoice = null;
-
-        // todo: create empty invoices
-        // todo: webhook
-        // todo: save credit card information for subscribing
-//        $invoice = $this->invoiceService->getInvoiceById($request->request->get('invoice'));
         Stripe::setApiKey($_ENV["STRIPE_SECRET"]);
-
-
 
         $errors = [];
 
@@ -127,23 +122,24 @@ class PaymentService
                 $charge = Charge::create(array(
                     'customer' => $customer->id,
                     'amount'   => $amount,
-                    'currency' => $currency,
+                    'currency' => $currency->value,
                     'description' => $description
                 ));
 
                 $chargeJson = $charge->jsonSerialize();
 
+                // save information about payments
                 $this->save($user, InvoiceStatus::COMPLETE->value, $invoice, $description);
 
             } catch (Exception $e) {
 
+                // save information about payments
                 $this->save($user, InvoiceStatus::ERROR->value, $invoice, $e->getMessage());
                 throw new Exception($e->getMessage());
             }
-
-
         }
     }
+
 
     /**
      * @param Request $request
@@ -153,16 +149,15 @@ class PaymentService
      */
     public function subscribe(Request $request, UserInterface $user)
     {
-        $card = $this->cardService->getActiveCard($user);
-        $invoice = $this->invoiceService->getInvoiceById($request->request->get('invoice'));
+        $invoice = $this->invoiceService->getInvoiceById((int) $request->request->get('invoiceId'));
         $token = $request->request->get('stripeToken');
         $currency = Currency::tryFrom($request->request->get('currency'));
         $email = $user->getUserIdentifier();
-        $amount = round($request->request->get('amount') * 100);
+        $amount = (int) $request->request->get('amount');
         $plan = SubscriptionPlan::tryFrom($request->request->get('plan')) ?? SubscriptionPlan::PLAN_WEEK->value;
         $errors = [];
 
-        Stripe::setApiKey($_ENV["STRIPE_KEY"]);
+        Stripe::setApiKey($_ENV["STRIPE_SECRET"]);
         $customer = Customer::create([
             'email' => $email,
             'source' => $token
@@ -175,7 +170,7 @@ class PaymentService
                     ],
                 'amount' => $amount,
                 'currency' => $currency->value,
-                'interval' => $plan->getSubscriptionPlan()['interval'],
+                'interval' => $plan->value,
                 'interval_count' => 1
             ]);
         } catch (\Throwable $e) {
@@ -197,18 +192,18 @@ class PaymentService
 
         if (empty($errors) && isset($subscription)) {
             $data = $subscription->jsonSerialize();
-
+//            $invoice->saveData(json_encode($data));
+//            $data['id'] - айди подписки
             if ($invoice === null) {
                 return;
             }
 
             if ($data['status'] === 'active') {
-                $invoice->setIsBind(true);
-                $invoice->setCard($card);
+                $invoice->setStatus(InvoiceStatus::SUBSCRIBED->value);
                 $this->invoiceService->getInvoiceRepo()->save($invoice);
                 $this->save($user, $data['status'], $invoice, 'subscribed successfully');
             } else {
-                $invoice->setIsBind(false);
+                $invoice->setStatus(InvoiceStatus::ERROR->value);
                 $this->invoiceService->getInvoiceRepo()->save($invoice);
                 $this->save($user, $data['status'], $invoice, 'subscribed failed');
             }
@@ -220,6 +215,13 @@ class PaymentService
      */
     public function cancelSubscribe(Request $request)
     {
+
+        // Set your secret key. Remember to switch to your live secret key in production.
+// See your keys here: https://dashboard.stripe.com/apikeys
+//        $stripe = new \Stripe\StripeClient('sk_test_51OEXP3ETEPPS0c4EfmJ1IJ8EeWY569YMJV57pQwnLQ0YsHEdQkuRdwvoBw0EqEJVeqcmZKsgeDaC1E3LEv1T77in00kiMLgB42');
+
+//        $stripe->subscriptions->cancel('sub_49ty4767H20z6a', []);
+
         //todo:
         //        Логика отмены подписки для пользователя
         // (обращение support, запрос через api - какие поля нужны будут для этого,
@@ -234,131 +236,5 @@ class PaymentService
     public function getPaymentById(int $paymentId): Payment
     {
         return $this->getPaymentsRepo()->findOneBy(['id' => $paymentId]);
-    }
-
-
-    public function customPay()
-    {
-        // todo:
-    }
-
-    /**
-     * @param Request $request
-     * @param UserInterface $user
-     * @return void
-     * @throws ClientExceptionInterface
-     * @throws DecodingExceptionInterface
-     * @throws RedirectionExceptionInterface
-     * @throws ServerExceptionInterface
-     * @throws TransportExceptionInterface
-     */
-    public function customSubscription(Request $request, UserInterface $user): void
-    {
-        $invoice = $this->invoiceService->getInvoiceById($request->request->get('invoice'));
-        $currency = Currency::tryFrom($request->request->get('currency'));
-        $customPassword = '123456';
-        $email = $user->getUserIdentifier();
-        $amount = $request->request->get('amount');
-        $type = $request->request->get('type');
-        $description = $request->request->get('description');
-        $card = $this->cardService->getActiveCard($user);
-
-        if ($type === 'subscription') {
-            $plan = SubscriptionPlan::tryFrom($request->request->get('plan'));
-        }
-
-        $auth = $this->client->request(
-            'POST',
-            'https://custom-pay/api/auth',
-            [
-                'json' => [
-                    'email' => $email,
-                    'password' => $customPassword,
-                ]
-            ]
-        );
-
-        $auth = $auth->toArray();
-
-        if ($auth['status'] === 'success') {
-            $response = $this->client->request(
-                'POST',
-                'https://custom-pay/api/pay',
-                [
-                    'json' => [
-                        'token'    => $auth['token'],
-                        'payType'  => $type,
-                        'plan'     => $plan ?? null,
-                        'amount'   => $amount,
-                        'currency' => $currency,
-                        'card' => [
-                            'pan'        => $card->getPAN(),
-                            'expiration' => $card->getExpiration(),
-                            'cvv'        => $card->getCvv()
-                        ]
-                    ]
-                ]
-            );
-
-            $status = $response->toArray()['status'];
-            $this->save($user, $status, $invoice, $description);
-        } else {
-            $this->save($user, InvoiceStatus::ERROR->value, $invoice, $description);
-        }
-    }
-
-    /**
-     * @param Request $request
-     * @param UserInterface $user
-     * @return void
-     * @throws ClientExceptionInterface
-     * @throws DecodingExceptionInterface
-     * @throws RedirectionExceptionInterface
-     * @throws ServerExceptionInterface
-     * @throws TransportExceptionInterface
-     */
-    public function cancelCustomSubscription(Request $request, UserInterface $user): void
-    {
-        $invoice = $this->invoiceService->getInvoiceById($request->request->get('invoice'));
-        $card = $this->cardService->getActiveCard($user);
-        $customPassword = '123456';
-        $email = $user->getUserIdentifier();
-
-        $auth = $this->client->request(
-            'POST',
-            'https://custom-pay/api/auth',
-            [
-                'json' => [
-                    'email' => $email,
-                    'password' => $customPassword,
-                ]
-            ]
-        );
-
-        $auth = $auth->toArray();
-
-        if ($auth['status'] === 'success') {
-            $response = $this->client->request(
-                'POST',
-                'https://custom-pay/api/cancel-subscription',
-                [
-                    'json' => [
-                        'token'    => $auth['token'],
-                        'card' => [
-                            'pan'        => $card->getPAN(),
-                            'expiration' => $card->getExpiration(),
-                            'cvv'        => $card->getCvv()
-                        ]
-                    ]
-                ]
-            );
-
-            $status = $response->toArray()['status'];
-            $this->save($user, $status, $invoice, 'subscription canceled');
-        } else {
-            $message = 'failed to cancel subscription';
-            $this->save($user, InvoiceStatus::ERROR->value, $invoice, $message);
-            throw new Exception($message);
-        }
     }
 }

@@ -36,4 +36,26 @@ class DataConverter
     {
         return ($value === null || $value === '') ? null : self::toString($value);
     }
+
+    /**
+     * @param int|float|string|null $value
+     * @return float
+     */
+    public static function toFloat(int|float|string|null $value): float
+    {
+        if (\is_string($value)) {
+            $value = preg_replace(['~(?![\d.,-]).~', '~,~'], ['', '.'], $value);
+        }
+
+        return (float) $value;
+    }
+
+    /**
+     * @param string|int|float|null $value
+     * @return float|null
+     */
+    public static function toFloatOrNull(string|int|float|null $value): ?float
+    {
+        return ($value === null || $value === '') ? null : self::toFloat($value);
+    }
 }

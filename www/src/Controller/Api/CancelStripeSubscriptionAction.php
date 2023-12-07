@@ -12,25 +12,42 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
+use App\Service\Invoice\InvoiceService;
+use Stripe\Exception\ApiErrorException;
+use Stripe\StripeClient;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
  * Class CancelStripeSubscriptionAction
  * @package App\Controller\Api\Invoice
  */
-#[Route('/api/stripe/cancel', name: 'api-stripe-cancel', methods: ['POST'])]
-class CancelStripeSubscriptionAction
+#[Route('/api/stripe/cancel/{invoice}', name: 'api-stripe-cancel', methods: ['POST'])]
+class CancelStripeSubscriptionAction extends AbstractController
 {
+    private InvoiceService $invoiceService;
+    private StripeClient $stripe;
 
     /**
      * Constructor CancelStripeSubscriptionAction
      */
-    public function __construct()
+    public function __construct(InvoiceService $invoiceService)
     {
+        $this->invoiceService = $invoiceService;
+        $this->stripe = new StripeClient($_ENV["STRIPE_SECRET"]);
     }
 
-    public function __invoke()
+    /**
+     * @param int $invoice
+     * @return JsonResponse
+     * @throws ApiErrorException
+     */
+    public function __invoke(int $invoice): JsonResponse
     {
-        //todo:
+        $invoice = $this->invoiceService->getInvoiceById($invoice);
+        $result = $this->stripe->subscriptions->cancel($invoice->getData()['id'], []);
+
+        return $this->json($result->jsonSerialize());
     }
 }

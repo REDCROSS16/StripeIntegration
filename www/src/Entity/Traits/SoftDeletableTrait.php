@@ -14,7 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 trait SoftDeletableTrait
 {
     #[ORM\Column(name: 'is_active', type: Types::BOOLEAN, nullable: false, options: ['unsigned' => true, 'default' => 1])]
-    private bool $isActive = false;
+    private bool $isActive = true;
 
     #[ORM\Column(name: 'is_deleted', type: Types::BOOLEAN, nullable: false, options: ['unsigned' => true, 'default' => 0])]
     private bool $isDeleted = false;

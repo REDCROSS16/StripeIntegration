@@ -17,7 +17,14 @@
             <td>{{ invoice.amount }}</td>
             <td>{{ invoice.status }}</td>
             <td>{{ invoice.description }}</td>
-            <td><a class="btn btn-primary" aria-label="Close" href="{{ path('pay-page', { 'invoiceId': invoice.id }) }}">activate</a></td>
+            <td>
+                {% if invoice.status == 'subscribed' %}
+                    <a class="btn btn-danger" aria-label="Close" href="#">Delete</a></td>
+                {% else %}
+                    <a class="btn btn-primary" aria-label="Close" href="{{ path('stripe-form', { 'invoiceId': invoice.id }) }}">Pay</a>
+                    <a class="btn btn-primary" aria-label="Close" href="{{ path('subscription-stripe-form', { 'invoiceId': invoice.id }) }}">Subscribe</a>
+
+                {% endif %}
         </tr>
     {% endfor %}
 

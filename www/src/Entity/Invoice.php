@@ -7,10 +7,11 @@ namespace App\Entity;
 use App\Entity\Traits\DateManagementTrait;
 use App\Entity\Traits\SoftDeletableInterface;
 use App\Entity\Traits\SoftDeletableTrait;
+use App\ENUM\InvoiceStatus;
 use App\Repository\InvoiceRepository;
-use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -29,37 +30,29 @@ class Invoice implements EntityInterface, SoftDeletableInterface
     #[ORM\Column(name: 'invoice_id', type: Types::INTEGER, nullable: false, options: ['unsigned' => true])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'cards')]
+    #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'user_id', nullable: false)]
     #[Assert\NotNull(message: 'error.validation.field.required')]
     private ?User $user = null;
 
-    #[ORM\OneToOne(targetEntity: Payment::class)]
-    #[ORM\JoinColumn(name: 'payment_id', referencedColumnName: 'payment_id', unique: true, nullable: false)]
+    #[ORM\OneToMany(mappedBy: 'payments', targetEntity: Payment::class, cascade: ['persist'], orphanRemoval: true)]
     private ?Payment $payment = null;
 
-    #[ORM\Column(name: 'order_id', type: Types::STRING, length: 255, nullable: false)]
+    #[ORM\Column(name: 'order', type: Types::STRING, length: 255, nullable: true)]
     private ?string $order = null;
 
     #[ORM\Column(name: 'amount', type: Types::DECIMAL, precision: 20, scale: 2, nullable: false, options: ['unsigned' => true])]
     #[Assert\NotNull(message: 'error.validation.field.required')]
     private ?float $amount = null;
 
-    #[ORM\Column(name: 'status', type: Types::STRING, length: 255, nullable: false)]
-    private ?string $status = null;
+    #[ORM\Column(name: 'status', type: Types::SMALLINT, nullable: false, enumType: InvoiceStatus::class, options: ['unsigned' => true])]
+    private ?InvoiceStatus $status = null;
 
-    #[ORM\Column(name: 'signature', type: Types::STRING, length: 255, nullable: false)]
-    private ?string $signature = null;
+    #[ORM\Column(name: 'data', type: Types::JSON, nullable: false)]
+    private ?array $data = null;
 
     #[ORM\Column(name: 'description', type: Types::TEXT, nullable: true)]
     private ?string $description = null;
-
-    #[ORM\OneToOne(targetEntity: CreditCard::class)]
-    #[ORM\JoinColumn(name: 'card_id', referencedColumnName: 'card_id', unique: true, nullable: false)]
-    private ?CreditCard $card = null;
-
-    #[ORM\Column(name: 'is_bind', type: Types::BOOLEAN, nullable: false, options: ['unsigned' => true, 'default' => 1])]
-    private ?bool $isBind = false;
 
     /**
      * @return int|null
@@ -146,18 +139,18 @@ class Invoice implements EntityInterface, SoftDeletableInterface
     }
 
     /**
-     * @return string
+     * @return InvoiceStatus|null
      */
-    public function getStatus(): string
+    public function getStatus(): ?InvoiceStatus
     {
         return $this->status;
     }
 
     /**
-     * @param string $status
+     * @param InvoiceStatus $status
      * @return Invoice
      */
-    public function setStatus(string $status): self
+    public function setStatus(InvoiceStatus $status): self
     {
         $this->status = $status;
 
@@ -165,20 +158,20 @@ class Invoice implements EntityInterface, SoftDeletableInterface
     }
 
     /**
-     * @return string|null
+     * @return array|null
      */
-    public function getSignature(): ?string
+    public function getData(): ?array
     {
-        return $this->signature;
+        return $this->data;
     }
 
     /**
-     * @param string|null $signature
+     * @param array|null $data
      * @return void
      */
-    public function setSignature(?string $signature): void
+    public function setData(?array $data):void
     {
-        $this->signature = $signature;
+        $this->data = $data;
     }
 
     /**
@@ -196,43 +189,5 @@ class Invoice implements EntityInterface, SoftDeletableInterface
     public function setDescription(?string $description): void
     {
         $this->description = $description;
-    }
-
-    /**
-     * @return CreditCard|null
-     */
-    public function getCard(): ?CreditCard
-    {
-        return $this->card;
-    }
-
-    /**
-     * @param CreditCard|null $card
-     * @return Invoice
-     */
-    public function setCard(?CreditCard $card): self
-    {
-        $this->card = $card;
-
-        return $this;
-    }
-
-    /**
-     * @return bool|null
-     */
-    public function getIsBind(): ?bool
-    {
-        return $this->isBind;
-    }
-
-    /**
-     * @param bool|null $isBind
-     * @return Invoice
-     */
-    public function setIsBind(?bool $isBind): self
-    {
-        $this->isBind = $isBind;
-
-        return $this;
     }
 }

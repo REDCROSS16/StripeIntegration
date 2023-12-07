@@ -14,9 +14,12 @@ namespace App\Service\Invoice;
 
 use App\Entity\Invoice;
 use App\ENUM\InvoiceStatus;
+use App\Service\Datetime\DateTimeWrapper;
 use App\Service\Validator\InvoiceValidator;
+use App\Utils\Converter\DataConverter;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use mysql_xdevapi\Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -50,8 +53,9 @@ class InvoiceService
         $invoice
             ->setOrder($order)
             ->setAmount($amount)
-            ->setUser($user)
+            ->setUser($user->getId())
             ->setStatus(InvoiceStatus::PENDING->value)
+            ->setSignature(md5(DataConverter::toString(DateTimeWrapper::getTimestamp())))
             ->setDescription($description);
 
         $this->getInvoiceRepo()->save($invoice);

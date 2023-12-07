@@ -23,7 +23,7 @@ use Symfony\Component\Routing\Annotation\Route;
  * Class GetPaymentsAction
  * @package App\Controller\Payment
  */
-#[Route('/account/payments/list', name: 'payments-list', methods: ['GET'])]
+#[Route(path: '/account/payments/list', name: 'payments-list', methods: ['GET'])]
 class GetPaymentsAction extends AbstractController
 {
     private PaymentService $paymentService;
@@ -35,8 +35,6 @@ class GetPaymentsAction extends AbstractController
 
     public function __invoke(): Response
     {
-
-
         return $this->render(
             'account/payment/payment.html.twig',
             [

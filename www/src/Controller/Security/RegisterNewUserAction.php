@@ -35,12 +35,14 @@ class RegisterNewUserAction extends AbstractController
      */
     public function __invoke(Request $request): Response
     {
+        /** @var User $user */
         $user = $this->entityManager->getRepository(User::class)->getFreshEntity();
         $form = $this->createForm(UserFormType::class, $user);
         $form->handleRequest($request);
 
         if ($request->isMethod('POST') && $form->isSubmitted() && $form->isValid()) {
             $user->setPassword($this->hasher->hashPassword($user, $user->getPassword()));
+            $user->setIsActive(true);
 
             if (count($this->validator->validate($user)) === 0) {
                 $this->entityManager->getRepository(User::class)->save($user);

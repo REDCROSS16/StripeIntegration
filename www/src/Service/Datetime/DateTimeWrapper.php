@@ -28,4 +28,12 @@ class DateTimeWrapper
     {
         return new DateTimeImmutable('now', new DateTimeZone(self::DEFAULT_TIMEZONE));
     }
+
+    /**
+     * @return int
+     */
+    public static function getTimestamp(): int
+    {
+        return (new DateTimeImmutable())->getTimestamp();
+    }
 }

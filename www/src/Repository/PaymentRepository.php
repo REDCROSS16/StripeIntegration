@@ -31,6 +31,7 @@ class PaymentRepository extends AbstractRepository
             ->from(Payment::class, 'e')
             ->where('e.user = :userId')
             ->andWhere('e.isDeleted = :isDeleted')
+            ->andWhere('e.isActive = :isActive')
             ->setParameter('userId', $userId)
             ->setParameter('isDeleted', false)
             ->setParameter('isActive', true);

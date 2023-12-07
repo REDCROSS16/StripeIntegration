@@ -16,6 +16,7 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidTypeException;
 use Symfony\Component\HttpFoundation\Request;
+use App\Utils\Converter\DataConverter;
 
 /**
  * Class InvoiceValidator
@@ -40,7 +41,7 @@ class InvoiceValidator
         $user = $this->validateUser($request);
         $order = $this->validateOrder($request);
         $amount = $this->validateAmount($request);
-        $description = $this->validate($request);
+        $description = $this->validateDescription($request);
 
         return [$user, $order, $amount, $description];
     }
@@ -69,8 +70,9 @@ class InvoiceValidator
      */
     private function validateAmount(Request $request): float
     {
-        $amount = $request->request->get('amount');
-        if (is_float($amount)) {
+        $amount = DataConverter::toFloatOrNull($request->request->get('amount'));
+
+        if ($amount !== null) {
             return $amount;
         }
 

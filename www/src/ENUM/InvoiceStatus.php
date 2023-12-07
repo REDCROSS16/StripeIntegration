@@ -2,9 +2,10 @@
 
 namespace App\ENUM;
 
-enum InvoiceStatus: string
+enum InvoiceStatus: int
 {
-    case COMPLETE = 'complete';
-    case ERROR = 'error';
-    case PENDING = 'pending';
+    case COMPLETE = 1;
+    case ERROR = 2;
+    case PENDING = 3;
+    case SUBSCRIBED = 4;
 }

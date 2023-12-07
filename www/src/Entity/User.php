@@ -9,6 +9,7 @@ use App\Entity\Traits\SoftDeletableTrait;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -16,6 +17,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[UniqueEntity(fields: ['phone'], message: 'error.validation.phone.already_exists')]
+#[UniqueEntity(fields: ['email'], message: 'error.validation.email.already_exists')]
+#[ORM\UniqueConstraint(name: 'phone', columns: ['phone'])]
+#[ORM\UniqueConstraint(name: 'email', columns: ['email'])]
 #[ORM\HasLifecycleCallbacks()]
 class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityInterface, SoftDeletableInterface
 {
@@ -24,7 +29,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
 
     public function __construct()
     {
-        $this->cards = new ArrayCollection();
         $this->payments = new ArrayCollection();
         $this->invoices = new ArrayCollection();
     }
@@ -66,9 +70,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
     #[Assert\NotNull]
     #[Assert\NotBlank]
     private ?string $password = null;
-
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: CreditCard::class, cascade: ['persist'], orphanRemoval: true)]
-    private Collection $cards;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Payment::class, cascade: ['persist'], orphanRemoval: true)]
     private Collection $payments;
@@ -203,28 +204,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
     }
 
     /**
-     * @return Collection<int, CreditCard>
-     */
-    public function getCards(): Collection
-    {
-        return $this->cards;
-    }
-
-    /**
-     * @param CreditCard $card
-     * @return $this
-     */
-    public function addCard(CreditCard $card): self
-    {
-        if (!$this->cards->contains($card)) {
-            $this->cards->add($card);
-            $card->setUser($this);
-        }
-
-        return $this;
-    }
-
-    /**
      * @return Collection<int, Payment>
      */
     public function getPayments(): Collection
@@ -239,7 +218,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
     public function addPayment(Payment $payment): self
     {
         if (!$this->payments->contains($payment)) {
-            $this->cards->add($payment);
+            $this->payments->add($payment);
             $payment->setUser($this);
         }
 
@@ -261,7 +240,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, EntityI
     public function addInvoice(Invoice $invoice): self
     {
         if (!$this->invoices->contains($invoice)) {
-            $this->cards->add($invoice);
+            $this->invoices->add($invoice);
             $invoice->setUser($this);
         }
 

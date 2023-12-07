@@ -18,6 +18,7 @@ use App\Entity\Traits\SoftDeletableTrait;
 use App\Repository\PaymentRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -26,6 +27,8 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 #[ORM\Entity(repositoryClass: PaymentRepository::class)]
 #[ORM\HasLifecycleCallbacks()]
+#[ORM\UniqueConstraint(name: 'invoice_id', columns: ['invoice_id'])]
+#[UniqueEntity(fields: ['invoice_id'], message: 'error.validation.invoice.already_exists')]
 class Payment implements EntityInterface, SoftDeletableInterface
 {
     use DateManagementTrait;
@@ -36,12 +39,12 @@ class Payment implements EntityInterface, SoftDeletableInterface
     #[ORM\Column(name: 'payment_id', type: Types::INTEGER, nullable: false, options: ['unsigned' => true])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'cards')]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'payments')]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'user_id', nullable: false)]
     #[Assert\NotNull(message: 'error.validation.field.required')]
     private ?User $user = null;
 
-    #[ORM\OneToOne(targetEntity: Invoice::class)]
+    #[ORM\ManyToOne(targetEntity: Invoice::class, inversedBy: 'invoices')]
     #[ORM\JoinColumn(name: 'invoice_id', referencedColumnName: 'invoice_id', unique: true, nullable: false)]
     private ?Invoice $invoice = null;
 

@@ -11,7 +11,7 @@
     {% for payment in payments %}
         <tr>
             <th scope="row">{{ loop.index }}</th>
-            <td>{{ payment.invoice }}</td>
+            <td>{{ payment.invoice.id }}</td>
             <td>{{ payment.status }}</td>
             <td>{{ payment.description }}</td>
         </tr>

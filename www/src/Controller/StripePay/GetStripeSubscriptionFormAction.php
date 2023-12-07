@@ -1,8 +1,16 @@
 <?php
 
+/**
+ * Created by PhpStorm
+ * User: red
+ * Date: 28.11.2023
+ * Time: 14:59
+ * Project: StripeIntegration
+ */
+
 declare(strict_types=1);
 
-namespace App\Controller\CreditCard;
+namespace App\Controller\StripePay;
 
 use App\Service\Invoice\InvoiceService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -10,36 +18,26 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * Class CompletePayAction
- * @package App\Controller\Api\CreditCard
+ * Class GetTestPayFormAction
+ * @package App\Controller\StipePay
  */
-#[Route(path: '/account/pay-page/{invoiceId<\d+>}', name: 'pay-page', methods: ['GET'])]
-class GetPayPageAction extends AbstractController
+#[Route('/stripe/sub-form/{invoiceId}', name: 'subscription-stripe-form', methods: ['GET'])]
+class GetStripeSubscriptionFormAction extends AbstractController
 {
     private InvoiceService $invoiceService;
-
     public function __construct(InvoiceService $invoiceService)
     {
         $this->invoiceService = $invoiceService;
     }
 
-    /**
-     * @param int $invoiceId
-     * @return Response
-     */
     public function __invoke(int $invoiceId): Response
     {
-        try {
-            $invoice = $this->invoiceService->getInvoiceById($invoiceId);
-        } catch (\Throwable $e) {
-            return new Response(null, Response::HTTP_NOT_FOUND);
-        }
-
         return $this->render(
-            'account/invoice/invoice-pay.html.twig',
+            'stripe-pay/stripe-subscription.html.twig',
             [
                 'stripe_key' => $_ENV["STRIPE_KEY"],
-                'invoice' => $invoice
+                'user'       => $this->getUser(),
+                'invoice'    => $this->invoiceService->getInvoiceById($invoiceId)
             ]
         );
     }

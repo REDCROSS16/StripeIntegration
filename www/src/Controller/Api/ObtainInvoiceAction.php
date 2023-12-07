@@ -22,7 +22,7 @@ use Symfony\Component\Routing\Annotation\Route;
  * Class ObtainInvoiceAction
  * @package App\Controller\Api\Invoice
  */
-#[Route('/api/invoice', name: 'api-obtain-invoice', methods: ['POST'])]
+#[Route(path: '/api/invoice', name: 'api-obtain-invoice', methods: ['POST'])]
 class ObtainInvoiceAction extends AbstractController
 {
     public function __invoke(Request $request, InvoiceService $invoiceService): Response
